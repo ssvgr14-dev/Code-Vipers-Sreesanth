@@ -1,0 +1,131 @@
+import { Check, X, Users, IndianRupee, ShoppingBag, Tractor } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useApp } from '@/contexts/AppContext';
+import { t } from '@/lib/translations';
+import { mockProducts } from '@/data/mockData';
+import { toast } from 'sonner';
+
+export default function AdminPanel() {
+  const { state } = useApp();
+  const lang = state.language;
+  const pendingProducts = mockProducts.filter(p => !p.isApproved);
+  const approvedProducts = mockProducts.filter(p => p.isApproved);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-display font-bold text-foreground mb-2">{t('admin.title', lang)}</h1>
+      <p className="text-muted-foreground mb-8">Manage listings, users, and platform analytics.</p>
+
+      {/* Analytics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { icon: IndianRupee, label: t('admin.totalSales', lang), value: '₹4,52,000', color: 'text-primary' },
+          { icon: Users, label: t('admin.activeUsers', lang), value: '1,240', color: 'text-accent' },
+          { icon: Tractor, label: t('admin.totalFarmers', lang), value: '312', color: 'text-leaf' },
+          { icon: ShoppingBag, label: t('admin.totalOrders', lang), value: '2,847', color: 'text-earth' },
+        ].map(s => (
+          <Card key={s.label} className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-body font-medium text-muted-foreground">{s.label}</CardTitle>
+              <s.icon className={`h-4 w-4 ${s.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-display text-foreground">{s.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Tabs defaultValue="pending">
+        <TabsList>
+          <TabsTrigger value="pending">
+            {t('admin.pendingListings', lang)}
+            {pendingProducts.length > 0 && (
+              <Badge className="ml-2 bg-destructive text-destructive-foreground border-0">{pendingProducts.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approved">Approved ({approvedProducts.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending">
+          <Card className="shadow-card">
+            <CardContent className="pt-6">
+              {pendingProducts.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No pending listings.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Farmer</TableHead>
+                      <TableHead>Price/KG</TableHead>
+                      <TableHead>Qty</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingProducts.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">
+                          <span className="mr-2">{p.image}</span>{p.name}
+                        </TableCell>
+                        <TableCell>{p.farmerName}</TableCell>
+                        <TableCell>₹{p.pricePerKg}</TableCell>
+                        <TableCell>{p.availableQty} kg</TableCell>
+                        <TableCell className="space-x-2">
+                          <Button size="sm" onClick={() => toast.success(`${p.name} approved!`)} className="gap-1">
+                            <Check className="h-3 w-3" /> {t('admin.approve', lang)}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => toast.error(`${p.name} rejected.`)} className="gap-1">
+                            <X className="h-3 w-3" /> {t('admin.reject', lang)}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="approved">
+          <Card className="shadow-card">
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Farmer</TableHead>
+                    <TableHead>Price/KG</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {approvedProducts.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">
+                        <span className="mr-2">{p.image}</span>{p.name}
+                      </TableCell>
+                      <TableCell>{p.farmerName}</TableCell>
+                      <TableCell>₹{p.pricePerKg}</TableCell>
+                      <TableCell>
+                        <Badge variant={p.isAvailable ? 'default' : 'secondary'}>
+                          {p.isAvailable ? 'Available' : 'Sold Out'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
